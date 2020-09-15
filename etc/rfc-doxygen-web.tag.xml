@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<tagfile>
+<compound kind="namespace"><name>rfc</name><filename></filename>
+  <member kind="function">
+    <type></type>
+    <name>rfc791</name>
+    <anchorfile>rfc791</anchorfile>
+    <anchor></anchor>
+    <arglist></arglist>
+  </member>
+  <member kind="function">
+    <type></type>
+    <name>rfc793</name>
+    <anchorfile>rfc793</anchorfile>
+    <anchor></anchor>
+    <arglist></arglist>
+  </member>
+  <member kind="function">
+    <type></type>
+    <name>rfc826</name>
+    <anchorfile>rfc826</anchorfile>
+    <anchor></anchor>
+    <arglist></arglist>
+  </member>
+  <member kind="function">
+    <type></type>
+    <name>rfc6298</name>
+    <anchorfile>rfc6298</anchorfile>
+    <anchor></anchor>
+    <arglist></arglist>
+  </member>
+</compound>
+</tagfile>

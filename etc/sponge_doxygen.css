@@ -1,0 +1,11 @@
+html, body { background-color: #F8F8F8; }
+div.textblock>p,div.memdoc>p,dl.section.note>dd { max-width: 750px; }
+div.line,pre.fragment { line-height: 1.5; }
+div.contents {
+    padding: 12px;
+    margin-top: auto;
+    margin-bottom: auto;
+    margin-left: 3%;
+    margin-right: 6%;
+    border-radius: 8px;
+}
