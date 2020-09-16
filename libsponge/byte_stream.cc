@@ -31,7 +31,7 @@ void ByteStream::pop_output(const size_t len) { DUMMY_CODE(len); }
 //! Read (i.e., copy and then pop) the next "len" bytes of the stream
 //! \param[in] len bytes will be popped and returned
 //! \returns a string
-std::string read(const size_t len) {
+std::string ByteStream::read(const size_t len) {
     DUMMY_CODE(len);
     return {};
 }
