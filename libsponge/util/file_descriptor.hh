@@ -81,11 +81,21 @@ class FileDescriptor {
 
     //! \name FDWrapper accessors
     //!@{
-    int fd_num() const { return _internal_fd->_fd; }                         //!< \brief underlying descriptor number
-    bool eof() const { return _internal_fd->_eof; }                          //!< \brief EOF flag state
-    bool closed() const { return _internal_fd->_closed; }                    //!< \brief closed flag state
-    unsigned int read_count() const { return _internal_fd->_read_count; }    //!< \brief number of reads
-    unsigned int write_count() const { return _internal_fd->_write_count; }  //!< \brief number of writes
+
+    //! underlying descriptor number
+    int fd_num() const { return _internal_fd->_fd; }
+
+    //! EOF flag state
+    bool eof() const { return _internal_fd->_eof; }
+
+    //! closed flag state
+    bool closed() const { return _internal_fd->_closed; }
+
+    //! number of reads
+    unsigned int read_count() const { return _internal_fd->_read_count; }
+
+    //! number of writes
+    unsigned int write_count() const { return _internal_fd->_write_count; }
     //!@}
 
     //! \name Copy/move constructor/assignment operators
