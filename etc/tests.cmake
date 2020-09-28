@@ -2,15 +2,17 @@ enable_testing ()
 
 set (LOSS_RATE 0.1)
 
-add_test(NAME t_wrapping_ints_cmp    COMMAND wrapping_integers_cmp)
-add_test(NAME t_wrapping_ints_unwrap COMMAND wrapping_integers_unwrap)
-add_test(NAME t_wrapping_ints_wrap   COMMAND wrapping_integers_wrap)
+add_test(NAME t_wrapping_ints_cmp         COMMAND wrapping_integers_cmp)
+add_test(NAME t_wrapping_ints_unwrap      COMMAND wrapping_integers_unwrap)
+add_test(NAME t_wrapping_ints_wrap        COMMAND wrapping_integers_wrap)
+add_test(NAME t_wrapping_ints_roundtrip   COMMAND wrapping_integers_roundtrip)
 
 add_test(NAME t_recv_connect         COMMAND recv_connect)
 add_test(NAME t_recv_transmit        COMMAND recv_transmit)
 add_test(NAME t_recv_window          COMMAND recv_window)
 add_test(NAME t_recv_reorder         COMMAND recv_reorder)
 add_test(NAME t_recv_close           COMMAND recv_close)
+add_test(NAME t_recv_special         COMMAND recv_special)
 
 add_test(NAME t_send_connect         COMMAND send_connect)
 add_test(NAME t_send_transmit        COMMAND send_transmit)
