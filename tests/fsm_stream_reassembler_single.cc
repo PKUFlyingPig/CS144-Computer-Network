@@ -117,6 +117,25 @@ int main() {
             test.execute(BytesAvailable{"abcdefgh"});
             test.execute(NotAtEof{});
         }
+
+        // credit for test: Bill Lin (2020)
+        {
+            ReassemblerTestHarness test{8};
+
+            test.execute(SubmitSegment{"abc", 0});
+            test.execute(BytesAssembled(3));
+            test.execute(NotAtEof{});
+
+            // Stream re-assembler should ignore empty segments
+            test.execute(SubmitSegment{"", 6});
+            test.execute(BytesAssembled(3));
+            test.execute(NotAtEof{});
+
+            test.execute(SubmitSegment{"de", 3}.with_eof(true));
+            test.execute(BytesAssembled(5));
+            test.execute(BytesAvailable("abcde"));
+            test.execute(AtEof{});
+        }
     } catch (const exception &e) {
         cerr << "Exception: " << e.what() << endl;
         return EXIT_FAILURE;

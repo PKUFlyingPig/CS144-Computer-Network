@@ -168,6 +168,17 @@ int main() {
             test.execute(SegmentArrives{}.with_seqno(isn + 3).with_data("cd").with_result(SegmentArrives::Result::OK));
         }
 
+        // credit for test: Jared Wasserman
+        {
+            // A byte with invalid stream index should be ignored
+            size_t cap = 4;
+            uint32_t isn = 23452;
+            TCPReceiverTestHarness test{cap};
+            test.execute(SegmentArrives{}.with_syn().with_seqno(isn).with_result(SegmentArrives::Result::OK));
+            test.execute(SegmentArrives{}.with_seqno(isn).with_data("a").with_result(SegmentArrives::Result::OK));
+            test.execute(ExpectTotalAssembledBytes{0});
+        }
+
     } catch (const exception &e) {
         cerr << e.what() << endl;
         return 1;
