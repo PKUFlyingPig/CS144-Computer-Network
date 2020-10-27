@@ -5,9 +5,9 @@
 #include "eventloop.hh"
 #include "fd_adapter.hh"
 #include "file_descriptor.hh"
+#include "network_interface.hh"
 #include "tcp_config.hh"
 #include "tcp_connection.hh"
-#include "tcp_over_ip.hh"
 #include "tuntap_adapter.hh"
 
 #include <atomic>
@@ -96,6 +96,8 @@ class TCPSpongeSocket : public LocalStreamSocket {
 
 using TCPOverUDPSpongeSocket = TCPSpongeSocket<TCPOverUDPSocketAdapter>;
 using TCPOverIPv4SpongeSocket = TCPSpongeSocket<TCPOverIPv4OverTunFdAdapter>;
+using TCPOverIPv4OverEthernetSpongeSocket = TCPSpongeSocket<TCPOverIPv4OverEthernetAdapter>;
+
 using LossyTCPOverUDPSpongeSocket = TCPSpongeSocket<LossyTCPOverUDPSocketAdapter>;
 using LossyTCPOverIPv4SpongeSocket = TCPSpongeSocket<LossyTCPOverIPv4OverTunFdAdapter>;
 
@@ -123,6 +125,16 @@ using LossyTCPOverIPv4SpongeSocket = TCPSpongeSocket<LossyTCPOverIPv4OverTunFdAd
 class CS144TCPSocket : public TCPOverIPv4SpongeSocket {
   public:
     CS144TCPSocket();
+    void connect(const Address &address);
+};
+
+//! Helper class that makes a TCPOverIPv4overEthernetSpongeSocket behave more like a (kernel) TCPSocket
+class FullStackSocket : public TCPOverIPv4OverEthernetSpongeSocket {
+  public:
+    //! Construct a TCP (stream) socket, using the CS144 TCPConnection object,
+    //! that encapsulates TCP segments in IP datagrams, then encapsulates
+    //! those IP datagrams in Ethernet frames sent to the Ethernet address of the next hop.
+    FullStackSocket();
     void connect(const Address &address);
 };
 
