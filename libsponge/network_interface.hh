@@ -57,7 +57,7 @@ class NetworkInterface {
 
     //! If type is IPv4, returns the datagram.
     //! If type is ARP request, learn a mapping from the "sender" fields, and send an ARP reply.
-    //! If type is ARP reply, learn a mapping from the "target" fields.
+    //! If type is ARP reply, learn a mapping from the "sender" fields.
     std::optional<InternetDatagram> recv_frame(const EthernetFrame &frame);
 
     //! \brief Called periodically when time elapses
