@@ -188,7 +188,7 @@ void program_body(bool is_client, const string &bounce_host, const string &bounc
     TCPSocketLab7 sock =
         is_client ? TCPSocketLab7{{"192.168.0.50"}, {"192.168.0.1"}} : TCPSocketLab7{{"172.16.0.100"}, {"172.16.0.1"}};
 
-    atomic<bool> exit_flag;
+    atomic<bool> exit_flag {};
 
     /* set up the network */
     thread network_thread([&]() {
