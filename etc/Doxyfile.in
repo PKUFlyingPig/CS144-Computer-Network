@@ -17,7 +17,7 @@ SOURCE_BROWSER         = YES
 EXT_LINKS_IN_WINDOW    = YES
 INCLUDE_PATH           = @PROJECT_SOURCE_DIR@/libsponge
 TAGFILES               = "@PROJECT_SOURCE_DIR@/etc/cppreference-doxygen-web.tag.xml=https://en.cppreference.com/w/"
-TAGFILES              += "@PROJECT_SOURCE_DIR@/etc/linux-man-doxygen-web.tag.xml=http://man7.org/linux/man-pages/"
+TAGFILES              += "@PROJECT_SOURCE_DIR@/etc/linux-man-doxygen-web.tag.xml=https://man7.org/linux/man-pages/"
 TAGFILES              += "@PROJECT_SOURCE_DIR@/etc/rfc-doxygen-web.tag.xml=https://tools.ietf.org/html/"
 HIDE_UNDOC_RELATIONS   = NO
 INLINE_GROUPED_CLASSES = YES
