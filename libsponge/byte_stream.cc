@@ -1,4 +1,5 @@
 #include "byte_stream.hh"
+
 #include <algorithm>
 
 // Dummy implementation of a flow-controlled in-memory byte stream.
@@ -13,7 +14,8 @@ void DUMMY_CODE(Targs &&... /* unused */) {}
 
 using namespace std;
 
-ByteStream::ByteStream(const size_t capa):buffer(), capacity(capa), end_write(false), end_read(false), written_bytes(0), read_bytes(0){}
+ByteStream::ByteStream(const size_t capa)
+    : buffer(), capacity(capa), end_write(false), end_read(false), written_bytes(0), read_bytes(0) {}
 
 size_t ByteStream::write(const string &data) {
     size_t canWrite = capacity - buffer.size();
@@ -64,34 +66,18 @@ std::string ByteStream::read(const size_t len) {
     return out;
 }
 
-void ByteStream::end_input() {
-    end_write = true;
-}
+void ByteStream::end_input() { end_write = true; }
 
-bool ByteStream::input_ended() const {
-    return end_write;
-}
+bool ByteStream::input_ended() const { return end_write; }
 
-size_t ByteStream::buffer_size() const {
-    return buffer.size();
-}
+size_t ByteStream::buffer_size() const { return buffer.size(); }
 
-bool ByteStream::buffer_empty() const {
-    return buffer.empty();
-}
+bool ByteStream::buffer_empty() const { return buffer.empty(); }
 
-bool ByteStream::eof() const {
-    return buffer.empty() && end_write;
-}
+bool ByteStream::eof() const { return buffer.empty() && end_write; }
 
-size_t ByteStream::bytes_written() const {
-    return written_bytes;
-}
+size_t ByteStream::bytes_written() const { return written_bytes; }
 
-size_t ByteStream::bytes_read() const {
-    return read_bytes;
-}
+size_t ByteStream::bytes_read() const { return read_bytes; }
 
-size_t ByteStream::remaining_capacity() const {
-    return capacity - buffer.size();
-}
+size_t ByteStream::remaining_capacity() const { return capacity - buffer.size(); }

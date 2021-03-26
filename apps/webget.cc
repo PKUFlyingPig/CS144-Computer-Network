@@ -24,7 +24,7 @@ void get_URL(const string &host, const string &path) {
     message += "Connection: close\r\n\r\n";
     socket.write(message);
     while (!socket.eof()) {
-        cout<<socket.read();
+        cout << socket.read();
     }
 
     cerr << "Function called: get_URL(" << host << ", " << path << ").\n";
@@ -59,4 +59,3 @@ int main(int argc, char *argv[]) {
 
     return EXIT_SUCCESS;
 }
-
