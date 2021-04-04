@@ -2,6 +2,7 @@
 #define SPONGE_LIBSPONGE_TCP_STATE
 
 #include "tcp_receiver.hh"
+#include "tcp_sender.hh"
 
 #include <string>
 
@@ -23,6 +24,9 @@ class TCPState {
   public:
     //! \brief Summarize the state of a TCPReceiver in a string
     static std::string state_summary(const TCPReceiver &receiver);
+
+    //! \brief Summarize the state of a TCPSender in a string
+    static std::string state_summary(const TCPSender &receiver);
 };
 
 namespace TCPReceiverStateSummary {
@@ -31,5 +35,14 @@ const std::string LISTEN = "waiting for SYN: ackno is empty";
 const std::string SYN_RECV = "SYN received (ackno exists), and input to stream hasn't ended";
 const std::string FIN_RECV = "input to stream has ended";
 }  // namespace TCPReceiverStateSummary
+
+namespace TCPSenderStateSummary {
+const std::string ERROR = "error (connection was reset)";
+const std::string CLOSED = "waiting for stream to begin (no SYN sent)";
+const std::string SYN_SENT = "stream started but nothing acknowledged";
+const std::string SYN_ACKED = "stream ongoing";
+const std::string FIN_SENT = "stream finished (FIN sent) but not fully acknowledged";
+const std::string FIN_ACKED = "stream finished and fully acknowledged";
+}  // namespace TCPSenderStateSummary
 
 #endif  // SPONGE_LIBSPONGE_TCP_STATE

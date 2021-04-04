@@ -20,6 +20,7 @@ add_test(NAME t_send_retx            COMMAND send_retx)
 add_test(NAME t_send_window          COMMAND send_window)
 add_test(NAME t_send_ack             COMMAND send_ack)
 add_test(NAME t_send_close           COMMAND send_close)
+add_test(NAME t_send_extra           COMMAND send_extra)
 
 add_test(NAME t_strm_reassem_single      COMMAND fsm_stream_reassembler_single)
 add_test(NAME t_strm_reassem_seq         COMMAND fsm_stream_reassembler_seq)
