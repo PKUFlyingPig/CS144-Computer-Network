@@ -21,7 +21,41 @@
 //! sender/receiver states and two variables that belong to the
 //! overarching TCPConnection object.
 class TCPState {
+  private:
+    std::string _sender{};
+    std::string _receiver{};
+    bool _active{true};
+    bool _linger_after_streams_finish{true};
+
   public:
+    bool operator==(const TCPState &other) const;
+    bool operator!=(const TCPState &other) const;
+
+    //! \brief Official state names from the [TCP](\ref rfc::rfc793) specification
+    enum class State {
+        LISTEN = 0,   //!< Listening for a peer to connect
+        SYN_RCVD,     //!< Got the peer's SYN
+        SYN_SENT,     //!< Sent a SYN to initiate a connection
+        ESTABLISHED,  //!< Three-way handshake complete
+        CLOSE_WAIT,   //!< Remote side has sent a FIN, connection is half-open
+        LAST_ACK,     //!< Local side sent a FIN from CLOSE_WAIT, waiting for ACK
+        FIN_WAIT_1,   //!< Sent a FIN to the remote side, not yet ACK'd
+        FIN_WAIT_2,   //!< Received an ACK for previously-sent FIN
+        CLOSING,      //!< Received a FIN just after we sent one
+        TIME_WAIT,    //!< Both sides have sent FIN and ACK'd, waiting for 2 MSL
+        CLOSED,       //!< A connection that has terminated normally
+        RESET,        //!< A connection that terminated abnormally
+    };
+
+    //! \brief Summarize the TCPState in a string
+    std::string name() const;
+
+    //! \brief Construct a TCPState given a sender, a receiver, and the TCPConnection's active and linger bits
+    TCPState(const TCPSender &sender, const TCPReceiver &receiver, const bool active, const bool linger);
+
+    //! \brief Construct a TCPState that corresponds to one of the "official" TCP state names
+    TCPState(const TCPState::State state);
+
     //! \brief Summarize the state of a TCPReceiver in a string
     static std::string state_summary(const TCPReceiver &receiver);
 
