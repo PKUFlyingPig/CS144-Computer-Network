@@ -80,10 +80,9 @@ void TCPSender::fill_window() {
 
         // prepare the payload
         size_t len_can_read = min(int(TCPConfig::MAX_PAYLOAD_SIZE), remainWindowSize); // can not overflow the window
-        size_t payload_len = len_can_read - segment.header().syn; // SYN also consumes window space
-        payload_len = min(_stream.buffer_size(), payload_len); // read at most all the data in _stream_in()
-        remainWindowSize -= (payload_len + segment.header().syn);
-        Buffer buffer(_stream.read(payload_len));
+        len_can_read = min(_stream.buffer_size(), len_can_read); // read at most all the data in _stream_in()
+        remainWindowSize -= len_can_read;
+        Buffer buffer(_stream.read(len_can_read));
         segment.payload() = buffer;
 
         // send FIN
@@ -130,6 +129,8 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
     }
     if (_rwindow < absack + window_size) {
         _rwindow = absack + window_size;
+        if (_rwindow > next_abs_seqno())
+            fill_window();
     } 
 }
 

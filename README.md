@@ -16,7 +16,7 @@ The most wonderful part of this class is the labs. There are 8 labs in total, wh
 - Lab 6 : IP routing
 - Lab 7 : Putting it all together (Use your own Internet infrastructures to talk with each other, so cool ! )
 
-#### Lab 1 : stream assembler 
+#### Lab 1 : stream assembler (2 - 3 hour)
 
 Related files : stream_reassembler.cc, stream_reassembler.hh
 
@@ -24,19 +24,34 @@ My implementation uses the idea of a fix-sized sliding window. I use a variable 
 
 Caveat : eof of the incoming substrings does not mean all the substrings have been all assembled, because these substrings may come in any order, which means the last part of the string may come first, indicating the eof as true, but you should wait for all the substrings to come to finally end the input.
 
-#### Lab 2 : TCP receiver
+#### Lab 2 : TCP receiver (4 hour)
 
 Related files : wrapping_integers.cc, wrapping_integers.hh, tcp_receiver.cc, tcp_receiver.hh
 
 The code is quite short, but it's tricky to implement correctly. My implementation is a little bit messy : (, but it finally works : ).
 
-#### Lab 3 : TCP sender
+#### Lab 3 : TCP sender (6 hour)
 
-In debugging ... ...
+Related files : tcp_sender.cc, tcp sender.hh
 
+Think twice before coding is not enough, I suggest that you read the handout at least five times and understand every single detail before coding. I wrote the code in about 1 hour, but spent the next terrible 5 hours debugging. I think the most tricky part of the lab is the concept of `window` and what happened when the window size is zero. To implement correctly, I suggest that you use one variable to record the window size of which the receiver advertised (I use _recx_windowsize) and use another variable to record the right edge of the window (I use rwindow) which the receiver has acknowledged (you does not need to record the left edge, since it's equal to _next_seqno). Hope the figure below can give you some intuition. From the figure you should know that each time the function fill_window() is called, you only need to send data between _next_seqno and rwindow.
 
+![image](./images/lab3_1.png)
 
+Now spend some time to fully understand the below paragraph in Section 3.2.
 
+```plaintext
+⋆What should I do if the window size is zero? 
+If the receiver has announced a window size of zero, the fill window method should act like the window size is one. The sender might end up sending a single byte that gets rejected (and not acknowledged) by the receiver, but this can also provoke the receiver into sending a new acknowledgment segment where it reveals that more space has opened up in its window. Without this, the sender would never learn that it was allowed to start sending again.
+```
+
+Here the "window size" means literally the window size of the receiver, i.e. the window size above in the figure. You should do what the above said only when the receiver has said that his window size is zero. So, when you find _next_seqno == rwindow, you should check the value of windowsize.
+
+Also, I strongly suggest you treat the first SYN packet as a special case in the fill_window(). It will simplify your implementation and save you a lot of time.
+
+#### Lab 4 : TCP Connection
+
+TBA ......
 
 ## Sponge quickstart
 
