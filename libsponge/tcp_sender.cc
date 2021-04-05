@@ -4,6 +4,10 @@
 
 #include <random>
 
+#include <algorithm>
+
+#include <iostream>
+
 // Dummy implementation of a TCP sender
 
 // For Lab 3, please replace with a real implementation that passes the
@@ -20,19 +24,147 @@ using namespace std;
 TCPSender::TCPSender(const size_t capacity, const uint16_t retx_timeout, const std::optional<WrappingInt32> fixed_isn)
     : _isn(fixed_isn.value_or(WrappingInt32{random_device()()}))
     , _initial_retransmission_timeout{retx_timeout}
-    , _stream(capacity) {}
+    , _stream(capacity)
+    , _next_seqno(0)
+    , _alarm(retx_timeout)
+    , _rwindow(1)
+    , _recx_windowsize(1)
+    , _acknos(0)
+    , _RTO(retx_timeout)
+    , _conse_retrans(0)
+    , _synSend(false)
+    , _finSend(false){}
 
-uint64_t TCPSender::bytes_in_flight() const { return {}; }
+uint64_t TCPSender::bytes_in_flight() const {
+    return _next_seqno - _acknos;
+}
 
-void TCPSender::fill_window() {}
+void TCPSender::send(const TCPSegment& segment) {
+    //cout << "SYN: " << segment.header().syn << endl;
+    cout << "segment seqno: " << segment.header().seqno.raw_value() 
+    <<  ". segment length: " << segment.length_in_sequence_space() 
+    <<  ". segment content: " << segment.payload().str() << endl;
+    _next_seqno += segment.length_in_sequence_space();
+    _segments_out.push(segment);
+    if (segment.length_in_sequence_space() > 0 ) {
+        // only store segments which consume some space in the seqno space
+        _outstanding.push(segment);
+        // if the segment contains data and the alarm has not been started, then start it
+        // it will expired after _RTO time
+        if (!_alarm.isStarted())
+            _alarm.start(_RTO);
+    }
+}
+
+void TCPSender::fill_window() {
+    if (_finSend) return;
+    int remainWindowSize = _rwindow - next_abs_seqno();
+    if (_recx_windowsize == 0) remainWindowSize = 1;
+    cout << "call fill_window. rwindom: " << _rwindow 
+    << ", next_abs_seqno:" << next_abs_seqno()
+    << ", remainWindowSize:" << remainWindowSize << endl;; 
+    while (remainWindowSize > 0) {
+        cout << "prepare one packet" << endl;
+        TCPSegment segment;
+        // no SYN sent
+        if (_next_seqno == 0 && !_synSend) {
+            segment.header().syn = true;
+            _synSend = true;
+        }
+
+        // set sequence number
+        segment.header().seqno = next_rela_seqno();
+
+        // prepare the payload
+        size_t len_can_read = min(int(TCPConfig::MAX_PAYLOAD_SIZE), remainWindowSize); // can not overflow the window
+        size_t payload_len = len_can_read - segment.header().syn; // SYN also consumes window space
+        payload_len = min(_stream.buffer_size(), payload_len); // read at most all the data in _stream_in()
+        remainWindowSize -= (payload_len + segment.header().syn);
+        Buffer buffer(_stream.read(payload_len));
+        segment.payload() = buffer;
+
+        // send FIN
+        if (_stream.eof() && !_finSend && remainWindowSize > 0) {
+            remainWindowSize--;
+            segment.header().fin = true;
+            _finSend = true;
+        }
+
+        if (segment.length_in_sequence_space() > 0) 
+            send(segment);
+        else 
+            break;
+    }
+}
+
+void TCPSender::remove_ack(const uint64_t ackno) {
+    while (!_outstanding.empty()) {
+        TCPSegment earliest = _outstanding.front();
+        uint64_t absseq = unwrap(earliest.header().seqno, _isn, _acknos);
+        if (ackno >= absseq + earliest.length_in_sequence_space()) _outstanding.pop();
+        else break;
+    }
+    // all outstanding data has been acknowledged, stop the alarm
+    if (_outstanding.empty()) {
+        _alarm.stop();
+    }
+}
 
 //! \param ackno The remote receiver's ackno (acknowledgment number)
 //! \param window_size The remote receiver's advertised window size
-void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_size) { DUMMY_CODE(ackno, window_size); }
+void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_size) {
+    cout << "ack_received(ackno: " << ackno.raw_value() << ", window:" << window_size << endl;
+    uint64_t absack = unwrap(ackno, _isn, _acknos);
+    _recx_windowsize = window_size;
+    if (absack > _acknos) {
+        // new data has been acknowledged
+        _acknos = absack;
+        remove_ack(absack);
+        _RTO = _initial_retransmission_timeout;
+        if (!_outstanding.empty()) {
+            _alarm.start(_RTO);
+        }
+        _conse_retrans = 0;
+    }
+    if (_rwindow < absack + window_size) {
+        _rwindow = absack + window_size;
+    } 
+    // if (_rwindow < absack + window_size) {
+    //     _rwindow = absack + window_size;
+    //     // only fill the window when new space has been opened up 
+    //     if (_rwindow > next_abs_seqno()) {
+    //         cout << "call fill window by myself " <<endl;
+    //         fill_window();
+    //     }
+    // }
+    //cout << "ack " << ackno.raw_value() << " received, its absseq = " 
+    //<< absack << ". Current _next_seqno = " << _next_seqno 
+    //<< ". Current ackno = " << _acknos << ". Bytes in flight = " << bytes_in_flight() << endl;
+}
 
 //! \param[in] ms_since_last_tick the number of milliseconds since the last call to this method
-void TCPSender::tick(const size_t ms_since_last_tick) { DUMMY_CODE(ms_since_last_tick); }
+void TCPSender::tick(const size_t ms_since_last_tick) {
+    _alarm.tick(ms_since_last_tick);
+    if (_alarm.isExpired()) {
+        // retransmit the earliest segment
+        // since the alarm is alive, the _outstanding queue can not be empty
+        TCPSegment segment = _outstanding.front();
+        // resend the TCP segment
+        _segments_out.push(segment);
+        if (_recx_windowsize > 0) {
+            _conse_retrans++;
+            _RTO *= 2;
+        }
+        _alarm.start(_RTO);
+    }
+}
 
-unsigned int TCPSender::consecutive_retransmissions() const { return {}; }
+unsigned int TCPSender::consecutive_retransmissions() const {
+    return _conse_retrans;
+}
 
-void TCPSender::send_empty_segment() {}
+void TCPSender::send_empty_segment() {
+    TCPSegment segment;
+    segment.header().seqno = next_rela_seqno();
+    _segments_out.push(segment);
+}
