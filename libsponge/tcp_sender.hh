@@ -110,6 +110,8 @@ class TCPSender {
     //! send given TCP segment
     void send(const TCPSegment& segment); 
 
+    //! send SYN segment
+    void send_SYN();
     //! next absolute sequence number
     uint64_t next_abs_seqno() {
       return _next_seqno;

@@ -40,10 +40,6 @@ uint64_t TCPSender::bytes_in_flight() const {
 }
 
 void TCPSender::send(const TCPSegment& segment) {
-    //cout << "SYN: " << segment.header().syn << endl;
-    cout << "segment seqno: " << segment.header().seqno.raw_value() 
-    <<  ". segment length: " << segment.length_in_sequence_space() 
-    <<  ". segment content: " << segment.payload().str() << endl;
     _next_seqno += segment.length_in_sequence_space();
     _segments_out.push(segment);
     if (segment.length_in_sequence_space() > 0 ) {
@@ -56,21 +52,28 @@ void TCPSender::send(const TCPSegment& segment) {
     }
 }
 
+void TCPSender::send_SYN() {
+    TCPSegment segment;
+    segment.header().seqno = next_rela_seqno();
+    segment.header().syn = true;
+    _synSend = true;
+    send(segment);
+}
+
 void TCPSender::fill_window() {
     if (_finSend) return;
-    int remainWindowSize = _rwindow - next_abs_seqno();
-    if (_recx_windowsize == 0) remainWindowSize = 1;
-    cout << "call fill_window. rwindom: " << _rwindow 
-    << ", next_abs_seqno:" << next_abs_seqno()
-    << ", remainWindowSize:" << remainWindowSize << endl;; 
+    // no SYN sent
+    if (_next_seqno == 0 && !_synSend) 
+        send_SYN();
+    
+    int remainWindowSize = 0;
+    if (_rwindow >= next_abs_seqno()) {
+        remainWindowSize = _rwindow - next_abs_seqno();
+    } else return;
+
+    if (_recx_windowsize == 0 && remainWindowSize == 0) remainWindowSize = 1;
     while (remainWindowSize > 0) {
-        cout << "prepare one packet" << endl;
         TCPSegment segment;
-        // no SYN sent
-        if (_next_seqno == 0 && !_synSend) {
-            segment.header().syn = true;
-            _synSend = true;
-        }
 
         // set sequence number
         segment.header().seqno = next_rela_seqno();
@@ -113,7 +116,6 @@ void TCPSender::remove_ack(const uint64_t ackno) {
 //! \param ackno The remote receiver's ackno (acknowledgment number)
 //! \param window_size The remote receiver's advertised window size
 void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_size) {
-    cout << "ack_received(ackno: " << ackno.raw_value() << ", window:" << window_size << endl;
     uint64_t absack = unwrap(ackno, _isn, _acknos);
     _recx_windowsize = window_size;
     if (absack > _acknos) {
@@ -129,17 +131,6 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
     if (_rwindow < absack + window_size) {
         _rwindow = absack + window_size;
     } 
-    // if (_rwindow < absack + window_size) {
-    //     _rwindow = absack + window_size;
-    //     // only fill the window when new space has been opened up 
-    //     if (_rwindow > next_abs_seqno()) {
-    //         cout << "call fill window by myself " <<endl;
-    //         fill_window();
-    //     }
-    // }
-    //cout << "ack " << ackno.raw_value() << " received, its absseq = " 
-    //<< absack << ". Current _next_seqno = " << _next_seqno 
-    //<< ". Current ackno = " << _acknos << ". Bytes in flight = " << bytes_in_flight() << endl;
 }
 
 //! \param[in] ms_since_last_tick the number of milliseconds since the last call to this method
