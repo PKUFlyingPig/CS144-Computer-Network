@@ -27,6 +27,7 @@ class TCPConnection {
 
 
     void send_RST();
+    bool real_send();
     void set_ack_and_windowsize(TCPSegment& segment);
     // prereqs1 : The inbound stream has been fully assembled and has ended.
     bool check_inbound_ended();

@@ -28,6 +28,18 @@ size_t TCPConnection::time_since_last_segment_received() const {
     return _time_since_last_segment_received_counter;
 }
 
+bool TCPConnection::real_send() {
+    bool isSend = false;
+    while (!_sender.segments_out().empty()) {
+        isSend = true;
+        TCPSegment segment = _sender.segments_out().front();
+        _sender.segments_out().pop();
+        set_ack_and_windowsize(segment);
+        _segments_out.push(segment);
+    }
+    return isSend;
+}
+
 void TCPConnection::segment_received(const TCPSegment &seg) {
     _time_since_last_segment_received_counter = 0;
     // check if the RST has been set
@@ -41,19 +53,30 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
     // give the segment to receiver
     _receiver.segment_received(seg);
 
+    // check if need to linger
+    if (check_inbound_ended() && !_sender.stream_in().eof()) {
+        _linger_after_streams_finish = false;
+    }
+
     // check if the ACK has been set
     if (seg.header().ack) {
         _sender.ack_received(seg.header().ackno, seg.header().win);
+        real_send();
     }
 
     // send ack
     if (seg.length_in_sequence_space() > 0) {
+        // handle the SYN/ACK case
         _sender.fill_window();
-        _sender.send_empty_segment();
-        TCPSegment ACKSeg = _sender.segments_out().front();
-        _sender.segments_out().pop();
-        set_ack_and_windowsize(ACKSeg);
-        _segments_out.push(ACKSeg);
+        bool isSend = real_send();
+        // send at least one ack message 
+        if (!isSend) {
+            _sender.send_empty_segment();
+            TCPSegment ACKSeg = _sender.segments_out().front();
+            _sender.segments_out().pop();
+            set_ack_and_windowsize(ACKSeg);
+            _segments_out.push(ACKSeg);
+        }
     }
 
     return;
@@ -78,24 +101,13 @@ void TCPConnection::set_ack_and_windowsize(TCPSegment& segment) {
 void TCPConnection::connect() {
     // send SYN
     _sender.fill_window();
-    TCPSegment SYNSeg = _sender.segments_out().front();
-    _sender.segments_out().pop();
-   
-    // set ack and windowsize
-    set_ack_and_windowsize(SYNSeg);
-
-    _segments_out.push(SYNSeg);
+    real_send();
 }
 
 size_t TCPConnection::write(const string &data) {
     size_t actually_write = _sender.stream_in().write(data);
     _sender.fill_window();
-    while (!_sender.segments_out().empty()) {
-        TCPSegment segment = _sender.segments_out().front();
-        _sender.segments_out().pop();
-        set_ack_and_windowsize(segment);
-        _segments_out.push(segment);
-    }
+    real_send();
     return actually_write;
 }
 
@@ -105,12 +117,7 @@ void TCPConnection::end_input_stream() {
     //cout<<"stream_in : "<< _sender.stream_in().input_ended()<< " " << _sender.stream_in().buffer_empty() << endl;
     // may send FIN
     _sender.fill_window();
-    while (!_sender.segments_out().empty()) {
-        TCPSegment segment = _sender.segments_out().front();
-        _sender.segments_out().pop();
-        set_ack_and_windowsize(segment);
-        _segments_out.push(segment);
-    }
+    real_send();
 }
 
 void TCPConnection::send_RST() {
@@ -138,8 +145,10 @@ bool TCPConnection::check_outbound_ended() {
 
 //! \param[in] ms_since_last_tick number of milliseconds since the last call to this method
 void TCPConnection::tick(const size_t ms_since_last_tick) {
-    _sender.tick(ms_since_last_tick);
     _time_since_last_segment_received_counter += ms_since_last_tick;
+    // tick the sender to do the retransmit
+    _sender.tick(ms_since_last_tick);
+    real_send();
 
     // abort the connection
     if (_sender.consecutive_retransmissions() > _cfg.MAX_RETX_ATTEMPTS) {
