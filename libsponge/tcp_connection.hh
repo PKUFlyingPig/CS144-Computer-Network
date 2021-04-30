@@ -37,7 +37,6 @@ class TCPConnection {
     bool check_outbound_ended();
 
 
-
   public:
     //! \name "Input" interface for the writer
     //!@{

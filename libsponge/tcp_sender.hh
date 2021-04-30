@@ -1,6 +1,7 @@
 #ifndef SPONGE_LIBSPONGE_TCP_SENDER_HH
 #define SPONGE_LIBSPONGE_TCP_SENDER_HH
 
+#include "buffer.hh"
 #include "byte_stream.hh"
 #include "tcp_config.hh"
 #include "tcp_segment.hh"
@@ -8,49 +9,6 @@
 
 #include <functional>
 #include <queue>
-
-class Alarm {
-  private:
-    //! whether the alarm has been started
-    bool alive;
-
-    //! the passed time from the start of this alarm
-    size_t counter;
-
-    //! after time_limit, the alarm will expire 
-    unsigned int time_limit;
-
-  public:
-    //! initilizer
-    Alarm (unsigned int RTO):alive(false), counter(0), time_limit(RTO){};
-
-    //! start the alarm
-    void start(unsigned int RTO) {
-      time_limit = RTO;
-      alive = true;
-      counter = 0;
-    }
-
-    //! tick the alarm
-    void tick(const size_t ms_since_last_tick) {
-      if (!alive) return;
-      counter += ms_since_last_tick;
-    }
-
-    //! stop the alarm
-    void stop() {
-      alive = false;
-      counter = 0;
-    }
-
-    bool isStarted() {
-      return alive;
-    }
-    bool isExpired() {
-      return alive && (counter >= time_limit);
-    }
-};
-
 
 //! \brief The "sender" part of a TCP implementation.
 
@@ -60,7 +18,6 @@ class Alarm {
 //! segments if the retransmission timer expires.
 class TCPSender {
   private:
-
     //! our initial sequence number, the number for our SYN.
     WrappingInt32 _isn;
 
@@ -76,53 +33,23 @@ class TCPSender {
     //! the (absolute) sequence number for the next byte to be sent
     uint64_t _next_seqno{0};
 
+    bool _syn_sent = false;
+    bool _fin_sent = false;
+    uint64_t _bytes_in_flight = 0;
+    uint16_t _receiver_window_size = 0;
+    uint16_t _receiver_free_space = 0;
+    uint16_t _consecutive_retransmissions = 0;
+    unsigned int _rto = 0;
+    unsigned int _time_elapsed = 0;
+    bool _timer_running = false;
+    std::queue<TCPSegment> _segments_outstanding{};
+    // Lab4 modify:
+    // bool _fill_window_called_by_ack_received{false};
 
-    //! the retransmission timier
-    Alarm _alarm;
+    bool _ack_valid(uint64_t abs_ackno);
+    void _send_segment(TCPSegment &seg);
 
-    //! recorded right edge of the receiver's window (absolute seqno)
-    uint16_t _rwindow;
-
-    //! receiver's window size
-    uint16_t _recx_windowsize;
-
-    //! received acknos from the receiver
-    uint16_t _acknos;
-
-    //! outstanding segments waiting for acknowledgements
-    std::queue<TCPSegment> _outstanding{};
-
-    //! current retransmission timeout number (RTO)
-    unsigned int _RTO;
-
-    //! consecutive retransmissions
-    unsigned int _conse_retrans;
-
-    //! SYN sent or not
-    bool _synSend;
-
-    //! FIN sent or not
-    bool _finSend;
-
-    //! remove the acknowledged segments
-    void remove_ack(const uint64_t ackno);
-
-    //! send given TCP segment
-    void send(const TCPSegment& segment); 
-
-    //! send SYN segment
-    void send_SYN();
-    //! next absolute sequence number
-    uint64_t next_abs_seqno() {
-      return _next_seqno;
-    }
-
-    //! next relative sequence number
-    WrappingInt32 next_rela_seqno() {
-      return wrap(_next_seqno, _isn);
-    }
-    
-    public:
+  public:
     //! Initialize a TCPSender
     TCPSender(const size_t capacity = TCPConfig::DEFAULT_CAPACITY,
               const uint16_t retx_timeout = TCPConfig::TIMEOUT_DFLT,
