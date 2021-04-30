@@ -49,12 +49,23 @@ Here the "window size" means literally the window size of the receiver, i.e. the
 
 Also, I strongly suggest you treat the first SYN packet as a special case in the fill_window(). It will simplify your implementation and save you a lot of time.
 
-#### Lab 4 : TCP Connection
+#### Lab 4 : TCP Connection (3 hours)
 
-Bugs : 
+Related files : tcp_connection.cc, tcp_connection.hh
 
-- sender's fill_window() only push segments into its own segments_out(), it is not the same as TCPConnection's segments_out() !
-- 
+Hints : 
+
+- sender's fill_window() only push segments into its own segments_out(), it is not the same as TCPConnection's segments_out() ! So whenever you call sender's function which may send a segment, you need to pop the segment out of sender's segments_out(), add the ackno and window_size, and push it into TCPConnection's segments_out()
+
+- It's a little bit tricky to decide where to check if need to linger after streams finish. Read the words below carefully which is in section 5.1 in the handout.
+
+  ```
+  Practically what all this means is that your TCPConnection has a member variable called linger after streams finish, exposed to the testing apparatus through the state() method. The variable starts out true. If the inbound stream ends before the TCPConnection
+  has reached EOF on its outbound stream, this variable needs to be set to false.
+  At any point where prerequisites #1 through #3 are satisfied, the connection is “done” (and active() should return false) if linger after streams finish is false. Otherwise you need to linger: the connection is only done after enough time (10 × cfg.rt timeout) has elapsed since the last segment was received.
+  ```
+
+  Briefly, you need to check right after the inbound stream has ended ! So when you first know that ? Obviously when you call the segment_received in TCPConnection because that is where you may get the FIN from the other peer.
 
 ## Sponge quickstart
 
