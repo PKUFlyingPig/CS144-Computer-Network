@@ -71,6 +71,8 @@ void TCPSender::fill_window() {
         remainWindowSize = _rwindow - next_abs_seqno();
     } else return;
 
+    //cout << "_rwindow : " << _rwindow << "; remainWindowSize : " << remainWindowSize << "; next_abs_seqno : " << next_abs_seqno() << endl;
+    //cout << "_stream.eof : " << _stream.eof() << endl;
     if (_recx_windowsize == 0 && remainWindowSize == 0) remainWindowSize = 1;
     while (remainWindowSize > 0) {
         TCPSegment segment;
@@ -87,6 +89,7 @@ void TCPSender::fill_window() {
 
         // send FIN
         if (_stream.eof() && !_finSend && remainWindowSize > 0) {
+            //cout << "!!!!!!!! send fin !!!!!!!" << endl;
             remainWindowSize--;
             segment.header().fin = true;
             _finSend = true;
@@ -116,6 +119,8 @@ void TCPSender::remove_ack(const uint64_t ackno) {
 //! \param window_size The remote receiver's advertised window size
 void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_size) {
     uint64_t absack = unwrap(ackno, _isn, _acknos);
+    // Impossible ackno (beyond next seqno) is ignored
+    if (absack > next_abs_seqno()) return;
     _recx_windowsize = window_size;
     if (absack > _acknos) {
         // new data has been acknowledged

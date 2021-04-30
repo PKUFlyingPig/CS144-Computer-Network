@@ -51,7 +51,10 @@ Also, I strongly suggest you treat the first SYN packet as a special case in the
 
 #### Lab 4 : TCP Connection
 
-TBA ......
+Bugs : 
+
+- sender's fill_window() only push segments into its own segments_out(), it is not the same as TCPConnection's segments_out() !
+- 
 
 ## Sponge quickstart
 

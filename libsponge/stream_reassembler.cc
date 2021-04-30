@@ -54,6 +54,9 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
         _output.end_input();
         return;
     }
+    // ignore invalid index
+    if (index >= unass_base + _capacity) return;
+
     if (index >= unass_base) {
         int offset = index - unass_base;
         size_t real_len = min(len, _capacity - _output.buffer_size() - offset);
