@@ -1,5 +1,6 @@
 #include "tcp_sponge_socket.hh"
 
+#include "network_interface.hh"
 #include "parser.hh"
 #include "tun.hh"
 #include "util.hh"
@@ -275,6 +276,9 @@ template class TCPSpongeSocket<TCPOverUDPSocketAdapter>;
 //! Specialization of TCPSpongeSocket for TCPOverIPv4OverTunFdAdapter
 template class TCPSpongeSocket<TCPOverIPv4OverTunFdAdapter>;
 
+//! Specialization of TCPSpongeSocket for TCPOverIPv4OverEthernetAdapter
+template class TCPSpongeSocket<TCPOverIPv4OverEthernetAdapter>;
+
 //! Specialization of TCPSpongeSocket for LossyTCPOverUDPSocketAdapter
 template class TCPSpongeSocket<LossyTCPOverUDPSocketAdapter>;
 
@@ -292,4 +296,35 @@ void CS144TCPSocket::connect(const Address &address) {
     multiplexer_config.destination = address;
 
     TCPOverIPv4SpongeSocket::connect(tcp_config, multiplexer_config);
+}
+
+static const string LOCAL_TAP_IP_ADDRESS = "169.254.10.9";
+static const string LOCAL_TAP_NEXT_HOP_ADDRESS = "169.254.10.1";
+
+EthernetAddress random_private_ethernet_address() {
+    EthernetAddress addr;
+    for (auto &byte : addr) {
+        byte = random_device()();  // use a random local Ethernet address
+    }
+    addr.at(0) |= 0x02;  // "10" in last two binary digits marks a private Ethernet address
+    addr.at(0) &= 0xfe;
+
+    return addr;
+}
+
+FullStackSocket::FullStackSocket()
+    : TCPOverIPv4OverEthernetSpongeSocket(TCPOverIPv4OverEthernetAdapter(TapFD("tap10"),
+                                                                         random_private_ethernet_address(),
+                                                                         Address(LOCAL_TAP_IP_ADDRESS, "0"),
+                                                                         Address(LOCAL_TAP_NEXT_HOP_ADDRESS, "0"))) {}
+
+void FullStackSocket::connect(const Address &address) {
+    TCPConfig tcp_config;
+    tcp_config.rt_timeout = 100;
+
+    FdAdapterConfig multiplexer_config;
+    multiplexer_config.source = {LOCAL_TAP_IP_ADDRESS, to_string(uint16_t(random_device()()))};
+    multiplexer_config.destination = address;
+
+    TCPOverIPv4OverEthernetSpongeSocket::connect(tcp_config, multiplexer_config);
 }
