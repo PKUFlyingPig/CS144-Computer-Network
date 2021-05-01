@@ -5,6 +5,7 @@
 #include "tcp_over_ip.hh"
 #include "tun.hh"
 
+#include <map>
 #include <optional>
 #include <queue>
 
@@ -31,6 +32,12 @@
 //! and learns or replies as necessary.
 class NetworkInterface {
   private:
+    //! only resend ARP request for the same IPv4 address after 5000ms
+    static constexpr size_t MAX_RETX_WAITING_TIME = 5000; 
+
+    //! cache the mapping for 30 seconds
+    static constexpr size_t MAX_CACHE_TIME = 30000;
+
     //! Ethernet (known as hardware, network-access-layer, or link-layer) address of the interface
     EthernetAddress _ethernet_address;
 
@@ -39,6 +46,37 @@ class NetworkInterface {
 
     //! outbound queue of Ethernet frames that the NetworkInterface wants sent
     std::queue<EthernetFrame> _frames_out{};
+
+    //! cache entry for ethernet address mapping
+    struct EthernetAddressEntry {
+      size_t caching_time;
+      EthernetAddress MAC_address;
+    };
+
+    //! mapping from ip_address to ethernet address
+    std::map<uint32_t, EthernetAddressEntry> _cache{};
+
+    //! to avoid flooding the network with ARP requests. If the network interface 
+    // already sent an ARP request about the same IP address in the last five seconds,
+    // don’t send a second request—just wait for a reply to the first one. 
+    // Again, queue the datagram until you learn the destination Ethernet address.
+    struct WaitingList {
+      size_t time_since_last_ARP_request_send = 0;
+      std::queue<InternetDatagram> waiting_datagram{};
+    };
+
+    //! mapping from the ip_address to the waiting queue
+    std::map<uint32_t, WaitingList> _queue_map{};
+
+    std::optional<EthernetAddress>get_EthernetAdress(const uint32_t ip_addr);
+    std::optional<WaitingList>get_WaitingList(const uint32_t ip_addr); 
+    void send_helper(const EthernetAddress MAC_addr, const InternetDatagram &dgram);
+    void queue_helper(const uint32_t ip_addr, const InternetDatagram &dgram);
+    void send_ARP_request(const uint32_t ip_addr);
+    void send_ARP_reply(const uint32_t ip_addr, const EthernetAddress& MAC_addr);
+    bool valid_frame(const EthernetFrame &frame);
+    void cache_mapping(uint32_t ip_addr, EthernetAddress MAC_addr);
+    void clear_waitinglist(uint32_t ip_addr, EthernetAddress MAC_addr);
 
   public:
     //! \brief Construct a network interface with given Ethernet (network-access-layer) and IP (internet-layer) addresses
