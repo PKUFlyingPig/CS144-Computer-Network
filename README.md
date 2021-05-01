@@ -67,6 +67,14 @@ Hints :
 
   Briefly, you need to check right after the inbound stream has ended ! So when you first know that ? Obviously when you call the segment_received in TCPConnection because that is where you may get the FIN from the other peer.
 
+#### Lab 5 : Network Interface (2 hours)
+
+Easy and straightforward, I passed the tests after the first successful compiling.
+
+#### Lab 6 : IP routing
+
+TBA ...
+
 ## Sponge quickstart
 
 For build prereqs, see [the CS144 VM setup instructions](https://web.stanford.edu/class/cs144/vm_howto).
