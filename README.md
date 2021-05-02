@@ -71,9 +71,11 @@ Hints :
 
 Easy and straightforward, I passed the tests after the first successful compiling.
 
-#### Lab 6 : IP routing
+#### Lab 6 : IP routing (1 hour)
 
-TBA ...
+Don't think too much about the efficiency, you may want to use Trie to do the longest-prefix-match, but the brute-force algorithm is enough to pass the tests. Remeber to handle the special case : 0.0.0.0/0 in the test's setting. 
+
+
 
 ## Sponge quickstart
 
