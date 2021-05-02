@@ -12,7 +12,7 @@
 class TCPConfig {
   public:
     static constexpr size_t DEFAULT_CAPACITY = 64000;  //!< Default capacity
-    static constexpr size_t MAX_PAYLOAD_SIZE = 1452;   //!< Max TCP payload that fits in either IPv4 or UDP datagram
+    static constexpr size_t MAX_PAYLOAD_SIZE = 1000;   //!< Conservative max payload size for real Internet
     static constexpr uint16_t TIMEOUT_DFLT = 1000;     //!< Default re-transmit timeout is 1 second
     static constexpr unsigned MAX_RETX_ATTEMPTS = 8;   //!< Maximum re-transmit attempts before giving up
 

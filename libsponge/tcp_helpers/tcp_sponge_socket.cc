@@ -212,7 +212,7 @@ void TCPSpongeSocket<AdaptT>::connect(const TCPConfig &c_tcp, const FdAdapterCon
 
     _datagram_adapter.config_mut() = c_ad;
 
-    cerr << "DEBUG: Connecting to " << c_ad.destination.to_string() << "... ";
+    cerr << "DEBUG: Connecting to " << c_ad.destination.to_string() << "...\n";
     _tcp->connect();
 
     const TCPState expected_state = TCPState::State::SYN_SENT;
@@ -223,7 +223,7 @@ void TCPSpongeSocket<AdaptT>::connect(const TCPConfig &c_tcp, const FdAdapterCon
     }
 
     _tcp_loop([&] { return _tcp->state() == TCPState::State::SYN_SENT; });
-    cerr << "done.\n";
+    cerr << "Successfully connected to " << c_ad.destination.to_string() << ".\n";
 
     _tcp_thread = thread(&TCPSpongeSocket::_tcp_main, this);
 }
@@ -241,12 +241,12 @@ void TCPSpongeSocket<AdaptT>::listen_and_accept(const TCPConfig &c_tcp, const Fd
     _datagram_adapter.config_mut() = c_ad;
     _datagram_adapter.set_listening(true);
 
-    cerr << "DEBUG: Listening for incoming connection... ";
+    cerr << "DEBUG: Listening for incoming connection...\n";
     _tcp_loop([&] {
         const auto s = _tcp->state();
         return (s == TCPState::State::LISTEN or s == TCPState::State::SYN_RCVD or s == TCPState::State::SYN_SENT);
     });
-    cerr << "new connection from " << _datagram_adapter.config().destination.to_string() << ".\n";
+    cerr << "New connection from " << _datagram_adapter.config().destination.to_string() << ".\n";
 
     _tcp_thread = thread(&TCPSpongeSocket::_tcp_main, this);
 }

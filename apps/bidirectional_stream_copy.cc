@@ -51,7 +51,7 @@ void bidirectional_stream_copy(Socket &socket) {
                             }
                         },
                         [&] { return (not _outbound.buffer_empty()) or (_outbound.eof() and not _outbound_shutdown); },
-                        [&] { _outbound.set_error(); });
+                        [&] { _outbound.end_input(); });
 
     // rule 3: read from socket into inbound byte stream
     _eventloop.add_rule(
@@ -80,7 +80,7 @@ void bidirectional_stream_copy(Socket &socket) {
                             }
                         },
                         [&] { return (not _inbound.buffer_empty()) or (_inbound.eof() and not _inbound_shutdown); },
-                        [&] { _inbound.set_error(); });
+                        [&] { _inbound.end_input(); });
 
     // loop until completion
     while (true) {

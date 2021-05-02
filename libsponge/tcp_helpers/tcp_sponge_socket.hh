@@ -23,9 +23,11 @@ class TCPSpongeSocket : public LocalStreamSocket {
     //! Stream socket for reads and writes between owner and TCP thread
     LocalStreamSocket _thread_data;
 
+  protected:
     //! Adapter to underlying datagram socket (e.g., UDP or IP)
     AdaptT _datagram_adapter;
 
+  private:
     //! Set up the TCPConnection and the event loop
     void _initialize_TCP(const TCPConfig &config);
 
