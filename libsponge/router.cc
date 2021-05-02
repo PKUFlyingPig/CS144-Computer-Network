@@ -1,6 +1,7 @@
 #include "router.hh"
 
 #include <iostream>
+#include <limits>
 
 using namespace std;
 
@@ -29,14 +30,36 @@ void Router::add_route(const uint32_t route_prefix,
     cerr << "DEBUG: adding route " << Address::from_ipv4_numeric(route_prefix).ip() << "/" << int(prefix_length)
          << " => " << (next_hop.has_value() ? next_hop->ip() : "(direct)") << " on interface " << interface_num << "\n";
 
-    DUMMY_CODE(route_prefix, prefix_length, next_hop, interface_num);
-    // Your code here.
+    _routing_table.push_back(RouteEntry(route_prefix, prefix_length, next_hop, interface_num, prefix_length == 0 ? 0 : numeric_limits<int>::min() >> (prefix_length - 1)));
 }
 
 //! \param[in] dgram The datagram to be routed
 void Router::route_one_datagram(InternetDatagram &dgram) {
-    DUMMY_CODE(dgram);
-    // Your code here.
+    // check TTL
+    if (dgram.header().ttl <= 1) return;
+    // longest prefix match
+    uint32_t destination = dgram.header().dst;
+    int match_idx = -1;
+    int max_matched_len = -1;
+    for (size_t i = 0; i < _routing_table.size(); i++) {
+        auto mask = _routing_table[i]._prefix_mask;
+        if ((destination & mask) == _routing_table[i]._route_prefix && max_matched_len < _routing_table[i]._prefix_length) {
+            match_idx = i;
+            max_matched_len = _routing_table[i]._prefix_length;
+        }
+    }
+    // if no match, drop the datagram
+    if (match_idx == -1) return;
+    // decrement TTL
+    dgram.header().ttl -= 1;
+    // send the datagram
+    auto next_hop = _routing_table[match_idx]._next_hop;
+    auto interface_num = _routing_table[match_idx]._interface_num;
+    if (next_hop.has_value()) {
+        _interfaces[interface_num].send_datagram(dgram, next_hop.value());
+    } else {
+        _interfaces[interface_num].send_datagram(dgram, Address::from_ipv4_numeric(destination));
+    }
 }
 
 void Router::route() {
