@@ -1,6 +1,16 @@
 # CS144 : Computer Networks
 
-This repository contains all the learning materials for Stanford CS143 course : Computer Networks, you can go to the [initial website](https://cs144.github.io) to get more guidance.
+This repository contains all the learning materials for Stanford CS144 course : Computer Networks, you can go to the [initial website](https://cs144.github.io) to get more guidance.
+
+## Resources
+
+[videos](https://www.youtube.com/watch?v=K9hV3igminw&list=PLEAYkSg4uSQ2dr0XO_Nwa5OcdEcaaELSG&index=109) : Online course videos 
+
+[course ppt](./notes) : supplemented ppt
+
+[lab handouts](./lab_handouts) : detailed lab descriptions
+
+[exams](./exams) : midterm/final exams with solution
 
 ## Lab Session
 
